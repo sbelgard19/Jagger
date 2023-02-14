@@ -1,0 +1,39 @@
+(LAYER 0)
+FROM ubuntu:18.04 
+
+(LAYERS 1-8)
+(2) LABEL maintainer="belgard.scott@gmail.com"
+(3) RUN  apt-get -y update && apt-get -y install nginx
+(4) COPY files/default /etc/nginx/sites-available/default
+(5) COPY files/index.html /usr/share/nginx/html/index.html
+(6) COPY files/images/Jagger.jpg /usr/share/nginx/html/images/Jagger.jpg
+(7) EXPOSE 80
+(8) CMD ["/usr/sbin/nginx", "-g", "daemon off;"]
+
+
+FROM 
+ubuntu:18.04, bionic, bionic-20221215
+ALL
+jagger:1.0, docker.hub
+
+LAYERS
+0
+ADD file:132da97f77ddc534ddb931a461d83ac2aa601dd4481360c874eac33b6c3470d9 in /
+
+1
+CMD ["bash"]
+2
+LABEL maintainer=belgard.scott@gmail.com
+3
+RUN /bin/sh -c apt-get -y update && apt-get -y install nginx # buildkit
+4
+COPY files/default /etc/nginx/sites-available/default # buildkit
+5
+COPY files/index.html /usr/share/nginx/html/index.html # buildkit
+6
+COPY files/images/Jagger.jpg /usr/share/nginx/html/images/Jagger.jpg # buildkit
+7
+EXPOSE map[80/tcp:{}]
+8
+CMD ["/usr/sbin/nginx" "-g" "daemon off;"]
+

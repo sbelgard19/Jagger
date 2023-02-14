@@ -1,0 +1,74 @@
+FROM
+(LAYER 0) alpine:3, 3.17, 3.17.1, latest
+
+FROM
+(LAYERS 1-9) nginx:1-alpine-slim, 1.23-alpine-slim, 1.23.3-alpine-slim, alpine-slim, mainline-alpine-slim
+
+FROM
+(LAYERS 10-15) nginx:1-alpine, 1.23-alpine, 1.23.3-alpine, alpine, mainline-alpine
+
+ALL
+(LAYERS 16-18)  nginxdemos/hello:latest
+
+
+
+(LAYERS)
+0	
+ADD file:e4d600fc4c9c293efe360be7b30ee96579925d1b4634c94332e2ec73f7d8eca1 in /
+
+1
+CMD ["/bin/sh"]
+
+2
+LABEL maintainer=NGINX Docker Maintainers <docker-maint@nginx.com>
+
+3
+ENV NGINX_VERSION=1.23.3
+
+4
+ENV PKG_RELEASE=1
+
+5
+set -x && addgroup -g 101 -S nginx && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx && apkArch="$(cat /etc/apk/arch)" && nginxPackages=" nginx=${NGINX_VERSION}-r${PKG_RELEASE} " && apk add --no-cache --virtual .checksum-deps openssl && case "$apkArch" in x86_64|aarch64) set -x && KEY_SHA512="e09fa32f0a0eab2b879ccbbc4d0e4fb9751486eedda75e35fac65802cc9faa266425edf83e261137a2f4d16281ce2c1a5f4502930fe75154723da014214f0655" && wget -O /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub && if echo "$KEY_SHA512 */tmp/nginx_signing.rsa.pub" | sha512sum -c -; then echo "key verification succeeded!"; mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/; else echo "key verification failed!"; exit 1; fi && apk add -X "https://nginx.org/packages/mainline/alpine/v$(egrep -o '^[0-9]+\.[0-9]+' /etc/alpine-release)/main" --no-cache $nginxPackages ;; *) set -x && tempDir="$(mktemp -d)" && chown nobody:nobody $tempDir && apk add --no-cache --virtual .build-deps gcc libc-dev make openssl-dev pcre2-dev zlib-dev linux-headers bash alpine-sdk findutils && su nobody -s /bin/sh -c " export HOME=${tempDir} && cd ${tempDir} && curl -f -O https://hg.nginx.org/pkg-oss/archive/${NGINX_VERSION}-${PKG_RELEASE}.tar.gz && PKGOSSCHECKSUM=\"52a80f6c3b3914462f8a0b2fbadea950bcd79c1bd528386aff4c28d5a80c6920d783575a061a47b60fea800eef66bf5a0178a137ea51c37277fe9c2779715990 *${NGINX_VERSION}-${PKG_RELEASE}.tar.gz\" && if [ \"\$(openssl sha512 -r ${NGINX_VERSION}-${PKG_RELEASE}.tar.gz)\" = \"\$PKGOSSCHECKSUM\" ]; then echo \"pkg-oss tarball checksum verification succeeded!\"; else echo \"pkg-oss tarball checksum verification failed!\"; exit 1; fi && tar xzvf ${NGINX_VERSION}-${PKG_RELEASE}.tar.gz && cd pkg-oss-${NGINX_VERSION}-${PKG_RELEASE} && cd alpine && make base && apk index -o ${tempDir}/packages/alpine/${apkArch}/APKINDEX.tar.gz ${tempDir}/packages/alpine/${apkArch}/*.apk && abuild-sign -k ${tempDir}/.abuild/abuild-key.rsa ${tempDir}/packages/alpine/${apkArch}/APKINDEX.tar.gz " && cp ${tempDir}/.abuild/abuild-key.rsa.pub /etc/apk/keys/ && apk del .build-deps && apk add -X ${tempDir}/packages/alpine/ --no-cache $nginxPackages ;; esac && apk del .checksum-deps && if [ -n "$tempDir" ]; then rm -rf "$tempDir"; fi && if [ -n "/etc/apk/keys/abuild-key.rsa.pub" ]; then rm -f /etc/apk/keys/abuild-key.rsa.pub; fi && if [ -n "/etc/apk/keys/nginx_signing.rsa.pub" ]; then rm -f /etc/apk/keys/nginx_signing.rsa.pub; fi && apk add --no-cache --virtual .gettext gettext && mv /usr/bin/envsubst /tmp/ && runDeps="$( scanelf --needed --nobanner /tmp/envsubst | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' | sort -u | xargs -r apk info --installed | sort -u )" && apk add --no-cache $runDeps && apk del .gettext && mv /tmp/envsubst /usr/local/bin/ && apk add --no-cache tzdata && ln -sf /dev/stdout /var/log/nginx/access.log && ln -sf /dev/stderr /var/log/nginx/error.log && mkdir /docker-entrypoint.d
+
+6
+COPY file:7b307b62e82255f040c9812421a30090bf9abf3685f27b02d77fcca99f997911 in /
+
+7
+COPY file:5c18272734349488bd0c94ec8d382c872c1a0a435cca13bd4671353d6021d2cb in /docker-entrypoint.d
+
+8
+COPY file:abbcbf84dc17ee4454b6b2e3cf914be88e02cf84d344ec45a5b31235379d722a in /docker-entrypoint.d
+
+9
+COPY file:e57eef017a414ca793499729d80a7b9075790c9a804f930f1417e56d506970cf in /docker-entrypoint.d
+
+10
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
+11
+EXPOSE 80
+
+12
+STOPSIGNAL SIGQUIT
+
+13
+CMD ["nginx" "-g" "daemon off;"]
+
+14
+ENV NJS_VERSION=0.7.9
+
+15
+set -x && apkArch="$(cat /etc/apk/arch)" && nginxPackages=" nginx=${NGINX_VERSION}-r${PKG_RELEASE} nginx-module-xslt=${NGINX_VERSION}-r${PKG_RELEASE} nginx-module-geoip=${NGINX_VERSION}-r${PKG_RELEASE} nginx-module-image-filter=${NGINX_VERSION}-r${PKG_RELEASE} nginx-module-njs=${NGINX_VERSION}.${NJS_VERSION}-r${PKG_RELEASE} " && apk add --no-cache --virtual .checksum-deps openssl && case "$apkArch" in x86_64|aarch64) set -x && KEY_SHA512="e09fa32f0a0eab2b879ccbbc4d0e4fb9751486eedda75e35fac65802cc9faa266425edf83e261137a2f4d16281ce2c1a5f4502930fe75154723da014214f0655" && wget -O /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub && if echo "$KEY_SHA512 */tmp/nginx_signing.rsa.pub" | sha512sum -c -; then echo "key verification succeeded!"; mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/; else echo "key verification failed!"; exit 1; fi && apk add -X "https://nginx.org/packages/mainline/alpine/v$(egrep -o '^[0-9]+\.[0-9]+' /etc/alpine-release)/main" --no-cache $nginxPackages ;; *) set -x && tempDir="$(mktemp -d)" && chown nobody:nobody $tempDir && apk add --no-cache --virtual .build-deps gcc libc-dev make openssl-dev pcre2-dev zlib-dev linux-headers libxslt-dev gd-dev geoip-dev libedit-dev bash alpine-sdk findutils && su nobody -s /bin/sh -c " export HOME=${tempDir} && cd ${tempDir} && curl -f -O https://hg.nginx.org/pkg-oss/archive/${NGINX_VERSION}-${PKG_RELEASE}.tar.gz && PKGOSSCHECKSUM=\"52a80f6c3b3914462f8a0b2fbadea950bcd79c1bd528386aff4c28d5a80c6920d783575a061a47b60fea800eef66bf5a0178a137ea51c37277fe9c2779715990 *${NGINX_VERSION}-${PKG_RELEASE}.tar.gz\" && if [ \"\$(openssl sha512 -r ${NGINX_VERSION}-${PKG_RELEASE}.tar.gz)\" = \"\$PKGOSSCHECKSUM\" ]; then echo \"pkg-oss tarball checksum verification succeeded!\"; else echo \"pkg-oss tarball checksum verification failed!\"; exit 1; fi && tar xzvf ${NGINX_VERSION}-${PKG_RELEASE}.tar.gz && cd pkg-oss-${NGINX_VERSION}-${PKG_RELEASE} && cd alpine && make module-geoip module-image-filter module-njs module-xslt && apk index -o ${tempDir}/packages/alpine/${apkArch}/APKINDEX.tar.gz ${tempDir}/packages/alpine/${apkArch}/*.apk && abuild-sign -k ${tempDir}/.abuild/abuild-key.rsa ${tempDir}/packages/alpine/${apkArch}/APKINDEX.tar.gz " && cp ${tempDir}/.abuild/abuild-key.rsa.pub /etc/apk/keys/ && apk del .build-deps && apk add -X ${tempDir}/packages/alpine/ --no-cache $nginxPackages ;; esac && apk del .checksum-deps && if [ -n "$tempDir" ]; then rm -rf "$tempDir"; fi && if [ -n "/etc/apk/keys/abuild-key.rsa.pub" ]; then rm -f /etc/apk/keys/abuild-key.rsa.pub; fi && if [ -n "/etc/apk/keys/nginx_signing.rsa.pub" ]; then rm -f /etc/apk/keys/nginx_signing.rsa.pub; fi && apk add --no-cache curl ca-certificates
+
+16
+RUN /bin/sh -c rm /etc/nginx/conf.d/* # buildkit
+
+17
+ADD hello.conf /etc/nginx/conf.d/ # buildkit
+
+18
+ADD index.html /usr/share/nginx/html/ # buildkit
+
+
+
